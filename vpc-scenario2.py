@@ -2,6 +2,7 @@ import os
 import boto3
 from dotenv import load_dotenv
 from botocore.exceptions import ClientError
+from datetime import datetime
 
 load_dotenv()
 
@@ -43,6 +44,12 @@ class VPCScenario2():
         )
         self.ec2_resource = ec2_resource
 
+    @staticmethod
+    def get_current_timestamp() -> str:
+        """
+        """
+        return datetime.utcnow().timestamp()
+
     def describe_addresses(self) -> dict:
         """
         https://boto3.amazonaws.com/v1/documentation/api/latest/guide/ec2-example-elastic-ip-addresses.html#describe-elastic-ip-addresses
@@ -79,6 +86,7 @@ class VPCScenario2():
         """
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.create_vpc
         """
+        ts = self.get_current_timestamp()
         vpc = self.get_ec2_resource().create_vpc(
             CidrBlock='10.0.0.0/16',
         )
@@ -86,12 +94,31 @@ class VPCScenario2():
             Tags=[
                 {
                     "Key": "Name",
-                    "Value": "{}vpc".format(self.prefix),
+                    "Value": "{}vpc_{}".format(self.prefix, ts),
                 }
             ],
         )
         vpc.wait_until_available()
         return vpc
+
+    def describe_vpcs(self, vpc_ids: list = ([])) -> dict:
+        """
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2.html#EC2.Client.describe_vpcs
+        """
+        return self.get_ec2_client().describe_vpcs(
+            # Filters=[
+            #     {
+            #         'Name': 'string',
+            #         'Values': [
+            #             'string',
+            #         ]
+            #     },
+            # ],
+            VpcIds=vpc_ids,
+            # DryRun=True|False,
+            # NextToken='string',
+            # MaxResults=123
+        )
 
 
 if __name__ == "__main__":
@@ -105,6 +132,11 @@ if __name__ == "__main__":
     # print(r)
     # print("")
 
-    r = instance.create_vpc()
-    print(r)
+    c = instance.create_vpc()
+    print(c)
+    print(c.id)
+    print("")
+
+    d = instance.describe_vpcs(vpc_ids=[c.id])
+    print(d)
     print("")
